@@ -4,42 +4,45 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3a1e9a20a12b81bbaa074885baeed321",
+    "hash": "ce8457c42fd5561e92e362e7263d0e86",
     "packages": [
         {
-            "name": "rezzza/flickr",
-            "version": "dev-master",
+            "name": "lusitanian/oauth",
+            "version": "v0.3.5",
             "source": {
                 "type": "git",
-                "url": "https://github.com/rezzza/flickr.git",
-                "reference": "eba6dd7f8036aa1bc86fe4770800b15a30d0adf0"
+                "url": "https://github.com/Lusitanian/PHPoAuthLib.git",
+                "reference": "ac5a1cd5a4519143728dce2213936eea302edf8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rezzza/flickr/zipball/eba6dd7f8036aa1bc86fe4770800b15a30d0adf0",
-                "reference": "eba6dd7f8036aa1bc86fe4770800b15a30d0adf0",
+                "url": "https://api.github.com/repos/Lusitanian/PHPoAuthLib/zipball/ac5a1cd5a4519143728dce2213936eea302edf8a",
+                "reference": "ac5a1cd5a4519143728dce2213936eea302edf8a",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.2"
+                "php": ">=5.3.0"
             },
             "require-dev": {
-                "guzzle/http": "3.*",
-                "phpunit/phpunit": "3.7.32"
+                "phpunit/phpunit": "3.7.*",
+                "predis/predis": "0.8.*@dev",
+                "symfony/http-foundation": "~2.1"
             },
             "suggest": {
-                "guzzle/guzzle": "HTTP wrapper",
-                "guzzle/http": "Guzzle Adapter for http requests"
+                "ext-openssl": "Allows for usage of secure connections with the stream-based HTTP client.",
+                "predis/predis": "Allows using the Redis storage backend.",
+                "symfony/http-foundation": "Allows using the Symfony Session storage backend."
             },
-            "type": "standalone",
+            "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1.x-dev"
+                    "dev-master": "0.1-dev"
                 }
             },
             "autoload": {
                 "psr-0": {
-                    "Rezzza\\Flickr": "src/"
+                    "OAuth": "src",
+                    "OAuth\\Unit": "tests"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -48,24 +51,28 @@
             ],
             "authors": [
                 {
-                    "name": "Community contributors",
-                    "homepage": "https://github.com/rezzza/flickr/contributors"
+                    "name": "David Desberg",
+                    "email": "david@daviddesberg.com"
+                },
+                {
+                    "name": "Pieter Hordijk",
+                    "email": "info@pieterhordijk.com"
                 }
             ],
-            "description": "Flickr API Wrapper",
-            "homepage": "https://github.com/rezzza/flickr",
+            "description": "PHP 5.3+ oAuth 1/2 Library",
             "keywords": [
-                "flickr"
+                "Authentication",
+                "authorization",
+                "oauth",
+                "security"
             ],
-            "time": "2014-07-22 15:39:45"
+            "time": "2014-09-05 15:19:58"
         }
     ],
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "rezzza/flickr": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

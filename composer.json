@@ -1,5 +1,5 @@
 {
     "require": {
-        "rezzza/flickr": "dev-master"
+        "lusitanian/oauth": "0.3.5"
     }
 }
