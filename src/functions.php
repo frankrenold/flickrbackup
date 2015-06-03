@@ -1,6 +1,46 @@
 <?php
 	
 /**
+ * Load config and users access credentials from file
+ */
+function loadConfig() {
+	$tokensFile = __DIR__.'/../config/tokens.json';
+	if(file_exists($tokensFile)) {
+		$tokens = json_decode(file_get_contents(__DIR__.'/../config/tokens.json'), true);
+		if(is_array($tokens) && array_key_exists('Flickr', $tokens) && !empty($tokens['Flickr'])) {
+			$token = unserialize($tokens['Flickr']);
+		} else {
+			echo "No valid Flickr token found in '".$tokensFile."'. Use getperms.php to update the tokens file.\n";
+			exit;
+		}
+	} else {
+		echo "Tokensfile '".$tokensFile."' does not exist. Use getperms.php to update the tokens file.\n";
+		exit;
+	}
+	$token = fix_object($token);
+	$token = array(
+		'userid' => (string)$token->extraParams['user_nsid'],
+		'username' => (string)$token->extraParams['username'],
+		'fullname' => (string)$token->extraParams['fullname'],
+		'accessToken' => (string)$token->accessToken,
+		'accessTokenSecret' => (string)$token->accessTokenSecret,
+	);
+	
+	$configFile = __DIR__.'/../config/config.json';
+	if(file_exists($configFile)) {
+		$config = json_decode(file_get_contents($configFile),true);
+		if(!is_array($config) || !array_key_exists(array('app_key','app_secret'), $config)) {
+			echo "No valid Flickr app keys found in '".$config."'. Update this file with your flickr api key.\n";
+			exit;
+		}
+	} else {
+		echo "Config file '".$configFile."' does not exist. Create it from example.\n";
+		exit;
+	}
+	return array_merge($config, $token);
+}
+	
+/**
  * Takes an __PHP_Incomplete_Class and casts it to a stdClass object.
  * All properties will be made public in this step.
  *
