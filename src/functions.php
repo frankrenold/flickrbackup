@@ -29,7 +29,7 @@ function loadConfig() {
 	$configFile = __DIR__.'/../config/config.json';
 	if(file_exists($configFile)) {
 		$config = json_decode(file_get_contents($configFile),true);
-		if(!is_array($config) || !array_key_exists(array('app_key','app_secret'), $config)) {
+		if(!is_array($config) || !array_key_exists('app_key', $config) || !array_key_exists('app_secret', $config)) {
 			echo "No valid Flickr app keys found in '".$config."'. Update this file with your flickr api key.\n";
 			exit;
 		}
