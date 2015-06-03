@@ -2,13 +2,29 @@
 namespace frankrenold\flickrbackup;
 
 /**
- * Bootstrap
+ * Setup error reporting
  */
-require_once __DIR__.'/bootstrap.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+/**
+ * Bootstrap the library
+ */
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use OAuth\OAuth1\Service\Flickr;
-use OAuth\Common\Storage\Memory;
 use OAuth\Common\Consumer\Credentials;
+
+/**
+ * Setup the timezone
+ */
+ini_set('date.timezone', 'Europe/Amsterdam');
+
+/**
+ * @var $serviceFactory \OAuth\ServiceFactory An OAuth service factory.
+ */
+$serviceFactory = new \OAuth\ServiceFactory();
 
 /**
  * Create a new instance of the URI class with the current URI, stripping the query string
@@ -18,7 +34,7 @@ $currentUri = $uriFactory->createFromAbsolute("http://localhost/");
 $currentUri->setQuery('');
 
 // Session storage
-$storage = new Memory();
+$storage = new FileStorage();
 
 // Setup the credentials for the requests
 $config = json_decode(file_get_contents(__DIR__ . '/../config/config.json'),true);
@@ -62,8 +78,6 @@ if($token = $flickrService->requestRequestToken()){
 				'access_token' => $oauth_token,
 				'access_secret' => $secret
 			);
-			file_put_contents(__DIR__ . '/../config/credentials.json', json_encode($cred));
-			print "Access credentials successfully saved to credentials.json\nThank You\n";
 		}		
 	}
 }

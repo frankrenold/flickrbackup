@@ -1,5 +1,9 @@
 {
     "require": {
-        "lusitanian/oauth": "0.3.5"
+        "lusitanian/oauth": "0.3.5",
+        "rezzza/flickr": "1.1.0"
+    },
+    "autoload": {
+        "psr-4": {"frankrenold\\flickrbackup\\": "src/"}
     }
 }
