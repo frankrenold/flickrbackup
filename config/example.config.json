@@ -1,4 +1,5 @@
 {
-	'app_key':'INSERT YOUR FLICKR APP KEY',
-	'app_secret':'INSERT YOUR FLICKR APP SECRET'
+	"app_key":"INSERT YOUR FLICKR APP KEY",
+	"app_secret":"INSERT YOUR FLICKR APP SECRET",
+	"file_folder":""
 }

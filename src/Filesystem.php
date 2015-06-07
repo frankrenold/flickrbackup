@@ -1,15 +1,16 @@
 <?php
-namespace frankrenold\flickrbackup;
+namespace Frankrenold\Flickrbackup;
 
 use OAuth\Common\Token\TokenInterface;
+use OAuth\Common\Storage\TokenStorageInterface;
 use OAuth\Common\Storage\Exception\TokenNotFoundException;
 use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
-use OAuth\Common\Storage\TokenStorageInterface;
 
 /**
+ * Extension to OAuth
  * Stores a token in a JSON File.
  */
-class FileStorage implements TokenStorageInterface
+class Filesystem implements TokenStorageInterface
 {
     /**
      * @var string

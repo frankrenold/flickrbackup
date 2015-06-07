@@ -1,4 +1,4 @@
 /vendor
 /config/config.json
 /config/tokens.json
-/config/states.json
+/data
