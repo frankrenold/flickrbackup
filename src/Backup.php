@@ -101,7 +101,7 @@ class Backup {
 			"sort" => "date-taken-asc",
 			"per_page" => "500",
 			"page" => (string)$page,
-			"format" => "json",
+			"format" => "php_serial",
 		);
 	    if(!empty($args_overwrite) && is_array($args_overwrite)) {
 		    foreach($args_overwrite as $key => $value) {
@@ -115,14 +115,12 @@ class Backup {
 		    }
 	    }
 	    $res = $this->call('flickr.photos.search', $args);
-	    var_dump($res);
-	    die();
-	    if((string)$res->attributes()->stat == "ok" && !empty($res->photos->photo)) {
+	    if((string)$res['stat'] == "ok" && !empty($res['photos']['photo'])) {
 		    // store media
-		    foreach($res->photos->photo as $media) {
+		    foreach($res['photos']['photo'] as $media) {
 			    $this->media[] = $media;
 		    }
-		    if(count($this->media) < $max && (int)$res->photos->attributes()->pages > $page) {
+		    if(count($this->media) < $max && (int)$res['photos']['pages'] > $page) {
 			    // call next page
 			    $page++;
 			    return $this->loadMedia($max, $args_overwrite, $page);
@@ -132,7 +130,7 @@ class Backup {
 			    if(count($this->media) < count($this->sets)/2) { // TODO: > is correct
 					// cache all photosetsinfo
 					foreach($this->sets as $set) {
-						$this->_loadSetInfo($set);
+						//$this->_loadSetInfo($set);
 					}
 				}
 			    return true;
@@ -150,15 +148,16 @@ class Backup {
 		    "user_id" => $this->getConfig('user_id'),
 		    "per_page" => "500",
 		    "page" => (string)$page,
+		    "format" => "php_serial",
 	    );
 	    $res = $this->call('flickr.photosets.getList', $args);
 	    
-	    if((string)$res->attributes()->stat == "ok" && !empty($res->photosets->photoset)) {
+	    if((string)$res['stat'] == "ok" && !empty($res['photosets']['photoset'])) {
 		    // store set
-		    foreach($res->photosets->photoset as $set) {
+		    foreach($res['photosets']['photoset'] as $set) {
 			    $this->sets[] = $set;
 		    }
-		    if((int)$res->photosets->attributes()->pages > $page) {
+		    if((int)$res['photosets']['pages'] > $page) {
 			    // call next page
 			    $page++;
 			    return $this->_getAllSets($page);
@@ -170,20 +169,16 @@ class Backup {
 	}
 	
 	private function _loadSetInfo($set, $page = 1) {
-		// load image IDs
-		$imgs = $set->addChild('imgs');
 		$args = array(
 			"photoset_id" => (string)$set->attributes()->id,
 		    "user_id" => $this->getConfig('user_id'),
 		    "per_page" => "2",
 		    "page" => (string)$page,
+		    "format" => "php_serial",
 	    );
 	    $res = $this->call('flickr.photosets.getPhotos', $args);
 	    
-	    if((string)$res->attributes()->stat == "ok" && !empty($res->photoset->photo)) {
-		    // store image IDs
-		    $imgs->addChild();
-		    $set->addChild();
+	    if((string)$res['stat'] == "ok" && !empty($res['photoset']['photo'])) {
 		    foreach($res->photosets->photoset as $set) {
 			    $this->sets[] = $set;
 		    }

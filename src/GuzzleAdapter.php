@@ -12,6 +12,7 @@ namespace FrankRenold\FlickrBackup;
 
 require 'vendor/autoload.php';
 use GuzzleHttp\Client;
+use GuzzleHttp\Promise;
 
 class GuzzleAdapter implements \Rezzza\Flickr\Http\AdapterInterface
 {
@@ -32,16 +33,11 @@ class GuzzleAdapter implements \Rezzza\Flickr\Http\AdapterInterface
      */
     public function post($url, array $data = array(), array $headers = array())
     {
-	    $avar = array();
-	    foreach($data as $key => $value) {
-		    $avar[] = urlencode($key).'='.urlencode($value);
-	    }
-	    $data = implode('&', $avar);
-        $response = $this->client->post($url, array('body' => $data, 'headers' => $headers));
+        $request = $this->client->post($url, array('form_params' => $data, 'headers' => $headers));
+        $response = $request->getBody();
         
-        var_dump($response);
-        
-        return $response->getBody();
+        // var_dump($response->read($response->getSize()));
+        return unserialize($response->read($response->getSize()));
     }
 
     /**
@@ -53,19 +49,11 @@ class GuzzleAdapter implements \Rezzza\Flickr\Http\AdapterInterface
      */
     public function multiPost(array $requests)
     {
-        $multi_request = $this->client->getCurlMulti();
+	    $responses = array();
         foreach ($requests as &$request) {
-            $request = $this->client->post($request['url'], $request['headers'], $request['data']);
-            $multi_request->add($request);
-        }
-        unset($request);
-
-        $multi_request->send();
-
-        $responses = array();
-        /** @var RequestInterface[] $requests */
-        foreach ($requests as $request) {
-            $responses[] = $request->getResponse()->json();
+	        $request = $this->client->post($request['url'], array('form_params' => $request['data'], 'headers' => $request['headers']));
+			$response = $request->getBody();
+			$responses[] = unserialize($response->read($response->getSize()));
         }
 
         return $responses;
