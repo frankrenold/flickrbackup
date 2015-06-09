@@ -1,5 +1,5 @@
 <?php
-namespace frankrenold\flickrbackup;
+namespace FrankRenold\FlickrBackup;
 
 /**
  * Setup error reporting
@@ -12,9 +12,6 @@ ini_set('display_startup_errors', 1);
  * Bootstrap the library
  */
 require_once __DIR__ . '/../vendor/autoload.php';
-
-use OAuth\OAuth1\Service\Flickr;
-use OAuth\Common\Consumer\Credentials;
 
 /**
  * Setup the timezone
@@ -34,11 +31,11 @@ $currentUri = $uriFactory->createFromAbsolute("http://localhost/");
 $currentUri->setQuery('');
 
 // Session storage
-$storage = new FileStorage();
+$storage = new \OAuth\Common\Storage\Memory();
 
 // Setup the credentials for the requests
 $config = json_decode(file_get_contents(__DIR__ . '/../config/config.json'),true);
-$credentials = new Credentials(
+$credentials = new \OAuth\Common\Consumer\Credentials(
 	$config['app_key'],
 	$config['app_secret'],
 	$currentUri->getAbsoluteUri()
@@ -71,13 +68,19 @@ if($token = $flickrService->requestRequestToken()){
 			$xml = simplexml_load_string($flickrService->request('flickr.test.login'));
 			print "\nLogin Status: ".(string)$xml->attributes()->stat."\n";
 			print "User ID: ".(string)$xml->user->attributes()->id."\n";
+			print "Username: ".(string)$xml->user->username."\n";
 			print "Access Token: ".$oauth_token."\n";
 			print "Access Secret: ".$secret."\n";
-			
-			$cred = array(
+						
+			$tokens = array(
+				'user_id' => (string)$xml->user->attributes()->id,
+				'user_name' => (string)$xml->user->username,
 				'access_token' => $oauth_token,
-				'access_secret' => $secret
+				'access_secret' => $secret,
 			);
+			
+			// save to file
+			file_put_contents(__DIR__.'/../config/tokens.json', json_encode($tokens));
 		}		
 	}
 }

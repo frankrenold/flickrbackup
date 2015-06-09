@@ -1,9 +1,11 @@
 {
     "require": {
         "lusitanian/oauth": "0.3.5",
-        "rezzza/flickr": "1.1.0"
+        "rezzza/flickr": "1.1.0",
+        "guzzle/http": "3.9.2",
+        "guzzlehttp/guzzle": "6.0.1"
     },
     "autoload": {
-        "psr-4": {"frankrenold\\flickrbackup\\": "src/"}
+        "psr-4": {"FrankRenold\\FlickrBackup\\": "src/"}
     }
 }
