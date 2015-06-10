@@ -25,25 +25,13 @@ ini_set('display_startup_errors', 1);
 require_once __DIR__ . '/../vendor/autoload.php';
 $b = new Backup(__DIR__.'/../config',__DIR__.'/../data');
 
-
+/**
+ * Run Backup
+ */
 $b->loadMedia(20);
 
+/**
+ * Finish with insights
+ */
 $b->stats();
-
 exit;
-
-// cache
-$setCache = false;
-$setsInfo = getAllSets($f, $config['userid']);
-if(count($found['photo']) > count($setsInfo)/2) {
-	// cache all photosetsinfo
-	foreach($setsInfo as $setId => $setInfo) {
-		$setsInfo[$setId] = array_merge($setInfo, getSetInfo($f, $setId));
-	}
-	$setCache = true;
-} else {
-	$setsInfo = array();
-}
-
-var_dump($found);
-die();

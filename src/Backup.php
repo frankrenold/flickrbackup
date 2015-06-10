@@ -127,13 +127,10 @@ class Backup {
 		    } else {
 			    // load set cache
 			    $this->_getAllSets();
-			    if(count($this->media) < count($this->sets)/2) { // TODO: > is correct
-					// cache all photosetsinfo
+			    if(count($this->media) > count($this->sets)/2) { // TODO: > is correct
+					// cache additional info for all photosets
 					foreach($this->sets as $set) {
 						$set = $this->_loadSetInfo($set);
-						var_dump($set);
-						$this->stats();
-						die();
 					}
 				}
 			    return true;
@@ -210,7 +207,7 @@ class Backup {
 	    return false;
 	}
 	
-	static function cmpSetByDateTaken($a, $b) {
+	public static function cmpSetByDateTaken($a, $b) {
 		return (strtotime($a['datetaken']) < strtotime($b['datetaken'])) ? -1 : 1;
 	}
     
