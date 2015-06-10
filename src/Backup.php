@@ -130,7 +130,10 @@ class Backup {
 			    if(count($this->media) < count($this->sets)/2) { // TODO: > is correct
 					// cache all photosetsinfo
 					foreach($this->sets as $set) {
-						//$this->_loadSetInfo($set);
+						$set = $this->_loadSetInfo($set);
+						var_dump($set);
+						$this->stats();
+						die();
 					}
 				}
 			    return true;
@@ -169,47 +172,45 @@ class Backup {
 	}
 	
 	private function _loadSetInfo($set, $page = 1) {
+		if($page == 1) {
+			// setup additional info
+			$set['fb_setname'] = preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(array(' ','/'), '-', $set['title']['_content']));
+			$set['fb_mids'] = array();
+			$set['tmp_photos'] = array();
+		}
 		$args = array(
-			"photoset_id" => (string)$set->attributes()->id,
+			"photoset_id" => (string)$set['id'],
 		    "user_id" => $this->getConfig('user_id'),
-		    "per_page" => "2",
+		    "extras" => 'date_taken',
+		    "per_page" => "500",
 		    "page" => (string)$page,
 		    "format" => "php_serial",
 	    );
 	    $res = $this->call('flickr.photosets.getPhotos', $args);
 	    
 	    if((string)$res['stat'] == "ok" && !empty($res['photoset']['photo'])) {
-		    foreach($res->photosets->photoset as $set) {
-			    $this->sets[] = $set;
+		    // save result temporary
+			$set['tmp_photos'] = array_merge($set['tmp_photos'], $res['photoset']['photo']);
+		    foreach($res['photoset']['photo'] as $photo) {
+			    // save media id to set
+			    $set['fb_mids'][] = $photo['id'];
 		    }
-		    if((int)$res->photos->photosets()->pages > $page) {
+		    if((int)$res['photoset']['pages'] > $page) {
 			    // call next page
 			    $page++;
-			    return $this->_getAllSets($page);
+			    return $this->_loadSetInfo($set, $page);
 		    } else {
-			    return true;
+			    // sort images and save photoset start date
+			    usort($set['tmp_photos'], array('\FrankRenold\FlickrBackup\Backup','cmpSetByDateTaken'));
+			    $set['fb_startDate'] = strtotime($set['tmp_photos'][0]['datetaken']);
+			    unset($set['tmp_photos']);
+			    return $set;
 		    }
 	    }
 	    return false;
-		
-		$perPage = 500;
-		$ps = $f->photosets_getPhotos($setid,'date_taken',5,$perPage,1);
-		$flickrCalls++;
-		$photos = $ps['photoset']['photo'];
-		for($p=2; $p<=$ps['photoset']['pages']; $p++) {
-			$pst = $f->photosets_getPhotos($setid,'date_taken',5,$perPage,$p);
-			$flickrCalls++;
-			$photos = array_merge($photos, $pst['photoset']['photo']);
-		}
-		$ids = array();
-		foreach($photos as $photo) {
-			$ids[] = $photo['id'];
-		}
-		usort($photos, 'cmpSetByDateTaken');
-		return array('startDate' => strtotime($photos[0]['datetaken']), 'photoIds' => $ids);
 	}
 	
-	function cmpSetByDateTaken($a, $b) {
+	static function cmpSetByDateTaken($a, $b) {
 		return (strtotime($a['datetaken']) < strtotime($b['datetaken'])) ? -1 : 1;
 	}
     
