@@ -58,6 +58,11 @@ class Backup {
      * @var array
      */
     protected $sets = array();
+    
+    /**
+     * @var boolean
+     */
+    protected $setsComplete = false;
 
     
     public function __construct($configDir, $dataDir) {
@@ -68,10 +73,12 @@ class Backup {
         // load config and init dataDir
         $this->loadConfig($configDir);
         $this->dataDir = $dataDir;
+        if(!file_exists($this->dataDir) && !is_dir($this->dataDir)) {
+	        mkdir($this->dataDir);
+        }
         // prepare access to api
         $metadata = new Flickr\Metadata($this->config['app_key'], $this->config['app_secret']);
 		$metadata->setOauthAccess($this->config['access_token'], $this->config['access_secret']);
-		//$this->api = new Flickr\ApiFactory($metadata, new Flickr\Http\GuzzleAdapter());
 		$this->api = new Flickr\ApiFactory($metadata, new GuzzleAdapter());
     }
     
@@ -132,11 +139,159 @@ class Backup {
 					foreach($this->sets as $set) {
 						$set = $this->_loadSetInfo($set);
 					}
+					$this->allSetsLoaded = true;
 				}
+				// backup all media
+				foreach($this->media as $medium) {
+					$this->download($medium);
+				}
+				
+				
 			    return true;
 		    }
 	    }
 	    return false;
+    }
+    
+    private function download($medium) {
+	    //get contexts
+	    $contexts = array();
+		if($this->setsComplete) {
+			foreach($this->sets as $set) {
+				if(in_array($medium['id'], $set['fb_mids'])) {
+					$contexts[] = $set;
+				}
+			}
+		} else {
+			$args = array(
+			    "photo_id" => $medium['id'],
+			    "format" => "php_serial",
+		    );
+		    $res = $this->call('flickr.photos.getAllContexts', $args);
+		    
+		    if((string)$res['stat'] == "ok" && !empty($res['set'])) {
+			    // store sets to contexts
+			    foreach($res['set'] as $set) {
+				    if(!isset($this->sets[$set['id']]['fb_mids'])) {
+					    // not yet prepared with additional info
+					    $this->sets[$set['id']] = $this->_loadSetInfo($this->sets[$set['id']]);
+				    }
+				    $contexts[] = $this->sets[$set['id']];
+			    }
+		    }
+		}
+		
+		// create paths to safe file
+		$setpaths = array();
+		$settags = array();
+		if(!empty($contexts)) {
+			foreach($contexts as $set) {
+				// folder exists?
+				$setpath = $this->dataDir.'/'.date('Y-m-d', $this->sets[$set['id']]['fb_startdate']).'_'.$this->sets[$set['id']]['fb_setname'].'_'.$set['id'];
+				if(!file_exists($setpath) && !is_dir($setpath)) {
+					mkdir($setpath);
+				}
+				// add setpath
+				$setpaths[] = $setpath;
+				// add settag
+				$settags[] = 'set-'.$this->sets[$set['id']]['fb_startdate'].':'.$this->sets[$set['id']]['fb_setname'];
+			}
+		} else {
+			// folder exists?
+			$setpath = $this->dataDir.'/'.'no-sets';
+			if(!file_exists($setpath) && !is_dir($setpath)) {
+				mkdir($setpath);
+			}
+			$setpaths[] = $setpath;
+		}
+		
+		// download file
+		$fname = (!empty($medium['title']) ? preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(array(' ','/','_'), '-', $medium['title'])).'_' : '').$medium['id'].'.'.$medium['originalformat'];
+		$dpath = $setpaths[0].'/'.$fname;
+		file_put_contents($dpath, fopen($medium['url_o'], 'r'));
+		$this->filesLoaded++;
+		
+		// prepare tags
+		$atags = array_merge(explode(' ', $medium['tags']), $settags);
+		
+		// set default tags
+		$et_tags = array(
+			"force" => array(
+				"ObjectName" => $medium['title'],
+				"Headline" => $medium['title'],	
+				"XMP-dc:Title" => $medium['title'],	
+				"Caption-Abstract" => $medium['description']['_content'],
+				"ImageDescription" => $medium['description']['_content'],
+				"XMP-dc:Description" => $medium['description']['_content'],
+				"DateCreated" => date('Y:m:d', strtotime($medium['datetaken'])),
+				"TimeCreated" => date('H:i:sP', strtotime($medium['datetaken'])),
+				"CreateDate" => date('Y:m:d H:i:s', strtotime($medium['datetaken'])),
+				"ModifyDate" => date('Y:m:d H:i:s', strtotime($medium['datetaken'])),
+				"DateTimeOriginal" => date('Y:m:d H:i:s', strtotime($medium['datetaken'])),
+				"XMP-xmp:CreateDate" => date('Y:m:d H:i:sP', strtotime($medium['datetaken'])),
+			),
+			"notset" => array(),
+			"lists" => array(
+				"Keywords" => $atags,
+				"XMP-dc:Subject" => $atags,
+			)
+		);
+		
+		// set gps tags if not set in original file
+		// check if file has no gps data included
+		$gpsfound = array();
+		exec('exiftool -a -gps:all '.$dpath, $gpsfound);
+		if(empty($gpsfound)) {
+			if(!in_array('snogeo', $atags)) {
+				echo "Looking for additional GPS-Data on Flickr: ".$dpath."\n";
+				// check for gps data on flickr				
+				$args = array(
+				    "photo_id" => $medium['id'],
+				    "format" => "php_serial",
+			    );
+			    $res = $this->call('flickr.photos.geo.getLocation', $args);
+			    if($res['stat'] == 'ok') {
+				    $lata = self::DECtoDMS($res['photo']['location']['latitude']);
+					$lona = self::DECtoDMS($res['photo']['location']['longitude']);
+					
+					$et_tags['force']["GPSLatitudeRef"] = $lata['rlat'];
+					$et_tags['force']["GPSLatitude"] = $res['photo']['location']['latitude'];
+					$et_tags['force']["GPSLongitudeRef"] = $lata['rlong'];
+					$et_tags['force']["GPSLongitude"] = $res['photo']['location']['longitude'];
+			    } else {
+				    echo "No geodata available for file: ".$dpath."\n";
+			    }
+			} else {
+				echo "No geodata available (Taged in Flickr) for file: ".$dpath."\n";
+			}
+		} else {
+			echo "GPS-Data found in file: ".$dpath."\n";
+		}
+		
+		// update metadata by exiftool
+		$command = "exiftool -F -m -overwrite_original";
+		foreach($et_tags['force'] as $name => $value) {
+			$command .= " -".$name."='".$value."'";
+		}
+		foreach($et_tags['notset'] as $name => $value) {
+			$command .= " -".$name."-= -".$name."='".$value."'";
+		}
+		foreach($et_tags['lists'] as $name => $value) {
+			foreach($value as $litem) {
+				$command .= " -".$name."='".$litem."'";
+			}
+		}
+		$command .= " ".$dpath;
+		$return = exec($command);
+		
+		// symlink to other sets
+		$fname = (!empty($medium['title']) ? preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(array(' ','/','_'), '-', $medium['title'])).'_' : '').$medium['id'].'_l.'.$medium['originalformat'];
+		for($i=1; $i<count($setpaths); $i++) {
+			if(is_file($setpaths[$i].'/'.$fname)) {
+				unlink($setpaths[$i].'/'.$fname);
+			}
+			symlink($dpath, $setpaths[$i].'/'.$fname);
+		}
     }
     
     public function getMedia() {
@@ -155,7 +310,7 @@ class Backup {
 	    if((string)$res['stat'] == "ok" && !empty($res['photosets']['photoset'])) {
 		    // store set
 		    foreach($res['photosets']['photoset'] as $set) {
-			    $this->sets[] = $set;
+			    $this->sets[$set['id']] = $set;
 		    }
 		    if((int)$res['photosets']['pages'] > $page) {
 			    // call next page
@@ -199,7 +354,7 @@ class Backup {
 		    } else {
 			    // sort images and save photoset start date
 			    usort($set['tmp_photos'], array('\FrankRenold\FlickrBackup\Backup','cmpSetByDateTaken'));
-			    $set['fb_startDate'] = strtotime($set['tmp_photos'][0]['datetaken']);
+			    $set['fb_startdate'] = strtotime($set['tmp_photos'][0]['datetaken']);
 			    unset($set['tmp_photos']);
 			    return $set;
 		    }
