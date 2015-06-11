@@ -28,7 +28,7 @@ $b = new Backup(__DIR__.'/../config',__DIR__.'/../data');
 /**
  * Run Backup
  */
-$b->loadMedia(20);
+$b->loadMedia(100);
 
 /**
  * Finish with insights
