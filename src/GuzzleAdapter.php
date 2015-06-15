@@ -10,7 +10,6 @@ namespace FrankRenold\FlickrBackup;
  * @license opensource.org/licenses/MIT The MIT License (MIT)
  */
 
-require 'vendor/autoload.php';
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
 

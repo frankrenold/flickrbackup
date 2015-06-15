@@ -12,7 +12,6 @@ namespace FrankRenold\FlickrBackup;
  * @license opensource.org/licenses/MIT The MIT License (MIT)
  */
 
-require 'vendor/autoload.php';
 use Rezzza\Flickr;
 
 /**
@@ -20,27 +19,27 @@ use Rezzza\Flickr;
 */
 class Backup {
 	/**
-     * @var int
+     * @var int Number of calls to flickr API.
      */
     protected $flickrCalls;
     
     /**
-     * @var int
+     * @var int Number of media files downloaded from flickr.
      */
     protected $filesLoaded;
     
     /**
-     * @var int
+     * @var int Timestamp when class was created (for internal stats use).
      */
     protected $createTime;
     
     /**
-     * @var array
+     * @var array Configuration values.
      */
     protected $config;
     
     /**
-     * @var string
+     * @var string Path to download directory.
      */
     protected $dataDir;
     
@@ -50,17 +49,17 @@ class Backup {
     protected $api;
     
     /**
-     * @var array
+     * @var array All media information to process.
      */
     protected $media = array();
     
     /**
-     * @var array
+     * @var array All photosets information to process.
      */
     protected $sets = array();
     
     /**
-     * @var boolean
+     * @var boolean Is true if _loadSetInfo is done for all existing photosets in account.
      */
     protected $setsComplete = false;
 
@@ -82,12 +81,24 @@ class Backup {
 		$this->api = new Flickr\ApiFactory($metadata, new GuzzleAdapter());
     }
     
-    public function loadConfig($configDir) {
+    /**
+	 * Loads values from config files into class attribute.
+	 *
+	 * @param string $configDir full path to config directory.
+	 * @return void
+	 */		
+    private function loadConfig($configDir) {
 	    $config = json_decode(file_get_contents($configDir.'/config.json'), true);
 	    $tokens = json_decode(file_get_contents($configDir.'/tokens.json'), true);
 	    $this->config = array_merge($config, $tokens);
     }
     
+    /**
+	 * Get current config value(s).
+	 *
+	 * @param string $key Key of a single value.
+	 * @return mixed Config array (if called with no key) or a the config value for the given key.
+	 */
     public function getConfig($key = null) {
 	    if(!empty($key)) {
 		    return $this->config[$key];
@@ -96,7 +107,7 @@ class Backup {
 	    }
     }
     
-    public function call($request, $args) {
+    private function call($request, $args) {
 	    $this->flickrCalls++;
 	    return $this->api->call($request, $args);
     }
@@ -154,7 +165,7 @@ class Backup {
     }
     
     private function download($medium) {
-	    //get contexts
+	    //get contexts of medium
 	    $contexts = array();
 		if($this->setsComplete) {
 			foreach($this->sets as $set) {
@@ -361,10 +372,6 @@ class Backup {
 	    }
 	    return false;
 	}
-	
-	public static function cmpSetByDateTaken($a, $b) {
-		return (strtotime($a['datetaken']) < strtotime($b['datetaken'])) ? -1 : 1;
-	}
     
     public function stats($print = true) {
 	    $runTimeEnd = time();
@@ -382,6 +389,10 @@ class Backup {
 		    return $stats;
 	    }
     }
+    
+    public static function cmpSetByDateTaken($a, $b) {
+		return (strtotime($a['datetaken']) < strtotime($b['datetaken'])) ? -1 : 1;
+	}
     
     // Converts decimal longitude / latitude to DMS
 	// ( Degrees / minutes / seconds ) 
