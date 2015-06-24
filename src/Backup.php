@@ -116,6 +116,7 @@ class Backup {
 	    $args = array(
 			"user_id" => $this->getConfig('user_id'),
 			"extras" => "original_format,url_o,description,tags,date_taken",
+			"tags" => "transfer",
 			"sort" => "date-taken-asc",
 			"per_page" => "500",
 			"page" => (string)$page,
@@ -250,11 +251,15 @@ class Backup {
 		
 		// set gps tags if not set in original file
 		// check if file has no gps data included
-		$gpsfound = array();
-		exec('exiftool -a -gps:all '.$dpath, $gpsfound);
-		if(empty($gpsfound)) {
-			if(!in_array('snogeo', $atags)) {
-				echo "Looking for additional GPS-Data on Flickr: ".$dpath."\n";
+		if($this->getConfig('geo_force_flickrdata') === false) {
+			echo "Check for GPS-Data in file: ".$dpath."\n";
+			$gpsfound = array();
+			exec('exiftool -a -gps:all '.$dpath, $gpsfound);
+		}
+		if(!in_array($this->getConfig('geo_nogeo_tag'), $atags)) {
+			if(empty($gpsfound)) {
+				// geo_force_flickrdata is true || no gps data found in file
+				echo "Looking for GPS-Data on Flickr: ".$dpath."\n";
 				// check for gps data on flickr				
 				$args = array(
 				    "photo_id" => $medium['id'],
@@ -269,14 +274,15 @@ class Backup {
 					$et_tags['force']["GPSLatitude"] = $res['photo']['location']['latitude'];
 					$et_tags['force']["GPSLongitudeRef"] = $lata['rlong'];
 					$et_tags['force']["GPSLongitude"] = $res['photo']['location']['longitude'];
+					echo "Flickr geodata saved to file: ".$dpath."\n";
 			    } else {
-				    echo "No geodata available for file: ".$dpath."\n";
+				    echo "No geodata available on Flickr for file: ".$dpath."\n";
 			    }
 			} else {
-				echo "No geodata available (Taged in Flickr) for file: ".$dpath."\n";
+				echo "GPS-Data found in file: ".$dpath."\n";
 			}
 		} else {
-			echo "GPS-Data found in file: ".$dpath."\n";
+			echo "No valid geodata to use (Taged in Flickr) for file: ".$dpath."\n";
 		}
 		
 		// update metadata by exiftool
