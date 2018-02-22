@@ -63,7 +63,7 @@ $b = new Backup($configDir, __DIR__.'/../data');
 /**
  * Run Backup
  */
-$b->loadMedia(20);
+$b->loadMedia();
 
 /**
  * Finish with insights
